@@ -558,7 +558,7 @@ def main():
     parser = ArgumentParser(description='Search for Kibana objects by ID across all spaces or generate inventory')
     parser.add_argument('--kibana_url', required=True, help='Kibana URL (e.g., https://your-kibana-url)')
     parser.add_argument('--api_key', required=True, help='Kibana API key for authentication')
-    parser.add_argument('--search_id', help='Search for a specific object ID across all spaces')
+    parser.add_argument('--object_id', help='Search for a specific object ID across all spaces')
     parser.add_argument('--output_format', choices=['json', 'csv', 'table', 'all'], default='table',
                        help='Output format for inventory (default: table)')
     parser.add_argument('--detailed', action='store_true', 
@@ -576,15 +576,15 @@ def main():
     headers = get_headers(args.api_key)
     
     # Check if we're searching for a specific ID
-    if args.search_id:
-        logging.info(f"Starting search for object ID: {args.search_id}")
-        matching_objects = search_object_by_id(headers, args.kibana_url, args.search_id)
-        display_search_results(matching_objects, args.search_id)
+    if args.object_id:
+        logging.info(f"Starting search for object ID: {args.object_id}")
+        matching_objects = search_object_by_id(headers, args.kibana_url, args.object_id)
+        display_search_results(matching_objects, args.object_id)
         
         # Optionally export search results to JSON
         if matching_objects and args.output_file:
             search_results = {
-                "search_id": args.search_id,
+                "object_id": args.object_id,
                 "timestamp": timestamp,
                 "total_matches": len(matching_objects),
                 "matches": matching_objects
