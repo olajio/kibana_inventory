@@ -5,7 +5,7 @@ import json
 from argparse import ArgumentParser
 from datetime import datetime
 import pytz
-import os
+
 
 # Set up timestamp in EST
 def set_timestamp():
@@ -20,7 +20,6 @@ def set_timestamp():
 # Setup Log file
 def setup_log_file(timestamp):
     """Creates a log file name with the EST timestamp."""
-    # Create the log file name with the EST timestamp
     log_file_name = f"log_file_{timestamp}.log"
     return log_file_name
 
@@ -100,51 +99,45 @@ def get_all_spaces(kibana_url, headers):
         return []
 
 
-def list_kibana_objects_in_space(kibana_url, headers, space_id):
+def find_object_by_id(kibana_url, headers, space_id, object_id):
     """
-    Lists all saved objects in a specific Kibana space, handling pagination.
-    Returns a list of object dictionaries with their type and ID.
+    Searches for a specific saved object by its ID within a given space.
+
+    Args:
+        kibana_url (str): The base URL of the Kibana instance.
+        headers (dict): The authorization headers.
+        space_id (str): The ID of the space to search in.
+        object_id (str): The ID of the saved object to find.
+
+    Returns:
+        dict: The saved object dictionary if found, otherwise None.
     """
-    objects_endpoint = f"{kibana_url}/s/{space_id}/api/saved_objects/_find"
-    all_objects = []
-    page = 1
-    per_page = 1000
+    find_endpoint = f"{kibana_url}/s/{space_id}/api/saved_objects/_find"
+    params = {
+        'search': object_id,
+        'search_fields': 'id',
+        'per_page': 1  # Only need one result
+    }
 
-    object_types = ["config", "config-global", "url", "index-pattern", "action", "query", "tag", "graph-workspace",
-                    "alert", "search", "visualization", "event-annotation-group", "dashboard", "lens", "cases",
-                    "metrics-data-source", "links", "canvas-element", "canvas-workpad", "osquery-saved-query",
-                    "osquery-pack", "csp-rule-template", "map", "infrastructure-monitoring-log-view",
-                    "threshold-explorer-view", "uptime-dynamic-settings", "synthetics-privates-locations", "apm-indices",
-                    "infrastructure-ui-source", "inventory-view", "infra-custom-dashboards", "metrics-explorer-view",
-                    "apm-service-group", "apm-custom-dashboards", "timelion-sheet"]
-
-    for obj_type in object_types:
-        while True:
-            params = {
-                'type': obj_type,
-                'per_page': per_page,
-                'page': page,
-            }
-            try:
-                response = requests.get(objects_endpoint, headers=headers, params=params, verify=True)
-                response.raise_for_status()
-                data = response.json()
-                objects = data.get("saved_objects", [])
-                all_objects.extend([{"id": obj["id"], "type": obj["type"]} for obj in objects])
-
-                if data.get('total', 0) <= page * per_page:
-                    break
-                page += 1
-            except requests.exceptions.RequestException as e:
-                logging.error(f"Failed to retrieve {obj_type} objects for space '{space_id}'. Error: {e}")
-                break
-
-    return all_objects
+    try:
+        response = requests.get(find_endpoint, headers=headers, params=params, verify=True)
+        response.raise_for_status()
+        data = response.json()
+        saved_objects = data.get("saved_objects", [])
+        
+        # Filter for an exact match on ID, as the search can be fuzzy
+        for obj in saved_objects:
+            if obj.get('id') == object_id:
+                return obj
+        return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to search for object '{object_id}' in space '{space_id}'. Error: {e}")
+        return None
 
 
-def main(kibana_url, api_key):
+def main(kibana_url, api_key, object_id):
     """
-    Main function to orchestrate the retrieval and listing of all Kibana objects.
+    Main function to orchestrate the search for a specific object across all spaces.
     """
     timestamp = set_timestamp()
     log_file_name = setup_log_file(timestamp)
@@ -157,33 +150,41 @@ def main(kibana_url, api_key):
         logging.warning("No spaces found or failed to retrieve spaces. Exiting.")
         return
 
-    all_kibana_objects_by_space = {}
+    object_found = False
     for space in spaces:
         space_id = space.get("id")
         space_name = space.get("name")
+        
         if not space_id:
             continue
 
-        logging.info(f"\n--- Listing objects in space: '{space_name}' (ID: {space_id}) ---")
-        objects_in_space = list_kibana_objects_in_space(kibana_url, headers, space_id)
-        
-        if objects_in_space:
-            all_kibana_objects_by_space[space_id] = objects_in_space
-            logging.info(f"Found {len(objects_in_space)} Kibana objects in space '{space_name}'.")
-        else:
-            logging.info(f"No objects found in space '{space_name}'.")
+        logging.info(f"Searching for object '{object_id}' in space: '{space_name}'...")
+        found_object = find_object_by_id(kibana_url, headers, space_id, object_id)
 
-    # Pretty print the final result to the log file and console
-    logging.info("\n--- Final Summary: All Kibana Objects by Space ---")
-    if all_kibana_objects_by_space:
-        logging.info(json.dumps(all_kibana_objects_by_space, indent=2))
-    else:
-        logging.warning("No objects were found in any space.")
+        if found_object:
+            object_title = found_object.get("attributes", {}).get("title", "N/A")
+            object_type = found_object.get("type", "N/A")
+            
+            logging.info(
+                "\n✅ Object Found!"
+                "\n------------------------------------------------------------"
+                f"\n  Object Title: {object_title}"
+                f"\n  Object Type: {object_type}"
+                f"\n  Space Name: {space_name} (ID: {space_id})"
+                "\n------------------------------------------------------------"
+            )
+            object_found = True
+            break # Exit the loop once the object is found
+
+    if not object_found:
+        logging.warning(f"\n❌ Object with ID '{object_id}' was not found in any Kibana space.")
+
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description='Loops through all Kibana spaces and lists all saved objects.')
+    parser = ArgumentParser(description='Finds a specific Kibana object by ID across all spaces.')
     parser.add_argument('--kibana_url', required=True, help='The URL of your Kibana instance.')
     parser.add_argument('--api_key', required=True, help='The Kibana API key with appropriate permissions.')
+    parser.add_argument('--object_id', required=True, help='The ID of the saved object to find.')
 
     args = parser.parse_args()
-    main(args.kibana_url, args.api_key)
+    main(args.kibana_url, args.api_key, args.object_id)
