@@ -394,12 +394,173 @@ def print_detailed_inventory(inventory):
                 print()
 
 
+# Search for a specific object ID across all spaces
+def search_object_by_id(headers, kibana_url, target_object_id):
+    """
+    Search for a specific object ID across all Kibana spaces.
+    
+    Args:
+        headers (dict): Headers for Kibana authentication
+        kibana_url (str): Kibana base URL
+        target_object_id (str): The object ID to search for
+        
+    Returns:
+        list: List of matching objects with their details
+    """
+    logging.info(f"Searching for object ID: {target_object_id} across all spaces...")
+    
+    # Get all spaces first
+    spaces = get_all_spaces(headers, kibana_url)
+    if not spaces:
+        logging.error("No spaces found or unable to retrieve spaces")
+        return []
+    
+    matching_objects = []
+    
+    # Object types to search through
+    object_types = [
+        "dashboard", "visualization", "search", "lens", 
+        "canvas-workpad", "map", "graph-workspace",
+        "index-pattern", "config", "url", "action", 
+        "query", "tag", "alert", "event-annotation-group",
+        "cases", "metrics-data-source", "links", 
+        "canvas-element", "osquery-saved-query",
+        "osquery-pack", "csp-rule-template",
+        "infrastructure-monitoring-log-view",
+        "threshold-explorer-view", "uptime-dynamic-settings",
+        "synthetics-privates-locations", "apm-indices",
+        "infrastructure-ui-source", "inventory-view",
+        "infra-custom-dashboards", "metrics-explorer-view",
+        "apm-service-group", "apm-custom-dashboards"
+    ]
+    
+    for space in spaces:
+        space_id = space["id"]
+        space_name = space.get("name", space_id)
+        
+        logging.info(f"Searching in space: {space_name} (ID: {space_id})")
+        
+        # Search through saved objects
+        find_objects_endpoint = f"{kibana_url}/s/{space_id}/api/saved_objects/_find"
+        
+        for obj_type in object_types:
+            try:
+                params = {
+                    'type': obj_type,
+                    'per_page': 10000,
+                    'fields': 'title,description,updated_at'
+                }
+                
+                response = requests.get(find_objects_endpoint, headers=headers, params=params, verify=True)
+                response.raise_for_status()
+                
+                data = response.json()
+                objects = data.get("saved_objects", [])
+                
+                for obj in objects:
+                    if obj["id"] == target_object_id:
+                        object_info = {
+                            "space_id": space_id,
+                            "space_name": space_name,
+                            "id": obj["id"],
+                            "type": obj["type"],
+                            "title": obj.get("attributes", {}).get("title", "N/A"),
+                            "description": obj.get("attributes", {}).get("description", ""),
+                            "updated_at": obj.get("updated_at", "N/A"),
+                            "created_at": obj.get("created_at", "N/A"),
+                            "version": obj.get("version", "N/A")
+                        }
+                        matching_objects.append(object_info)
+                        logging.info(f"Found matching object in space '{space_name}'!")
+                        
+            except requests.exceptions.RequestException as e:
+                logging.warning(f"Failed to search {obj_type} in space {space_id}: {e}")
+        
+        # Also search data views using the data views API
+        try:
+            dataview_url = f'{kibana_url}/s/{space_id}/api/data_views'
+            response = requests.get(dataview_url, headers=headers, verify=True)
+            response.raise_for_status()
+            
+            data = response.json()
+            data_views = data.get('data_view', [])
+            
+            for dv in data_views:
+                if dv["id"] == target_object_id:
+                    object_info = {
+                        "space_id": space_id,
+                        "space_name": space_name,
+                        "id": dv["id"],
+                        "type": "data-view",
+                        "title": dv.get("title", "N/A"),
+                        "description": dv.get("name", ""),
+                        "updated_at": "N/A",
+                        "created_at": "N/A",
+                        "version": "N/A"
+                    }
+                    matching_objects.append(object_info)
+                    logging.info(f"Found matching data view in space '{space_name}'!")
+                    
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"Failed to search data views in space {space_id}: {e}")
+    
+    return matching_objects
+
+
+# Display search results
+def display_search_results(matching_objects, target_object_id):
+    """
+    Display the search results in a formatted manner.
+    
+    Args:
+        matching_objects (list): List of matching object details
+        target_object_id (str): The object ID that was searched for
+    """
+    print("\n" + "="*80)
+    print(f"SEARCH RESULTS FOR OBJECT ID: {target_object_id}")
+    print("="*80)
+    
+    if not matching_objects:
+        print(f"❌ No objects found with ID: {target_object_id}")
+        print("The object may not exist or you may not have access to the spaces containing it.")
+        return
+    
+    print(f"✅ Found {len(matching_objects)} matching object(s):")
+    print()
+    
+    for i, obj in enumerate(matching_objects, 1):
+        print(f"{i}. OBJECT DETAILS:")
+        print(f"   Object ID: {obj['id']}")
+        print(f"   Object Type: {obj['type']}")
+        print(f"   Title/Name: {obj['title']}")
+        print(f"   Space ID: {obj['space_id']}")
+        print(f"   Space Name: {obj['space_name']}")
+        
+        if obj['description']:
+            desc = obj['description'][:100] + "..." if len(obj['description']) > 100 else obj['description']
+            print(f"   Description: {desc}")
+        
+        if obj['updated_at'] != "N/A":
+            print(f"   Last Updated: {obj['updated_at']}")
+        if obj['created_at'] != "N/A":
+            print(f"   Created: {obj['created_at']}")
+        if obj['version'] != "N/A":
+            print(f"   Version: {obj['version']}")
+        
+        print("-" * 60)
+    
+    if len(matching_objects) > 1:
+        print(f"⚠️  WARNING: Found {len(matching_objects)} objects with the same ID across different spaces!")
+        print("   This may indicate duplicate objects or cross-space references.")
+
+
 def main():
-    parser = ArgumentParser(description='Generate inventory of all Kibana objects across all spaces')
+    parser = ArgumentParser(description='Search for Kibana objects by ID across all spaces or generate inventory')
     parser.add_argument('--kibana_url', required=True, help='Kibana URL (e.g., https://your-kibana-url)')
     parser.add_argument('--api_key', required=True, help='Kibana API key for authentication')
+    parser.add_argument('--search_id', help='Search for a specific object ID across all spaces')
     parser.add_argument('--output_format', choices=['json', 'csv', 'table', 'all'], default='table',
-                       help='Output format (default: table)')
+                       help='Output format for inventory (default: table)')
     parser.add_argument('--detailed', action='store_true', 
                        help='Show detailed inventory with all object details')
     parser.add_argument('--output_file', help='Base filename for output files (without extension)')
@@ -414,7 +575,33 @@ def main():
     # Setup authentication headers
     headers = get_headers(args.api_key)
     
-    # Generate inventory
+    # Check if we're searching for a specific ID
+    if args.search_id:
+        logging.info(f"Starting search for object ID: {args.search_id}")
+        matching_objects = search_object_by_id(headers, args.kibana_url, args.search_id)
+        display_search_results(matching_objects, args.search_id)
+        
+        # Optionally export search results to JSON
+        if matching_objects and args.output_file:
+            search_results = {
+                "search_id": args.search_id,
+                "timestamp": timestamp,
+                "total_matches": len(matching_objects),
+                "matches": matching_objects
+            }
+            
+            output_filename = f"{args.output_file}_search_results.json"
+            try:
+                with open(output_filename, 'w', encoding='utf-8') as f:
+                    json.dump(search_results, f, indent=2, ensure_ascii=False)
+                logging.info(f"Search results exported to: {output_filename}")
+            except Exception as e:
+                logging.error(f"Failed to export search results: {e}")
+        
+        logging.info("Search completed!")
+        return 0
+    
+    # If no search ID provided, generate full inventory
     logging.info("Starting Kibana objects inventory...")
     inventory = generate_kibana_inventory(headers, args.kibana_url)
     
