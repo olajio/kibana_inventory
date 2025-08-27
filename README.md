@@ -11,6 +11,8 @@ A comprehensive Python script for managing and inventorying Kibana objects acros
 - 📋 **Comprehensive Object Types**: Supports dashboards, visualizations, data views, lenses, maps, and more
 - 📝 **Detailed Logging**: Timestamped logs with deployment information
 - 🔄 **Backward Compatible**: Supports both new deployment-based and legacy URL/API key approaches
+- 🔧 **Debug Mode**: Advanced debugging capabilities to troubleshoot object structure and field extraction issues
+- ✅ **Robust Field Extraction**: Enhanced algorithms to properly extract titles and descriptions from Kibana objects
 
 ## Supported Object Types
 
@@ -85,6 +87,9 @@ python kibana_inventory.py --deployment qa --output_format all --detailed
 
 # Custom output filename
 python kibana_inventory.py --deployment prod --output_file my_inventory
+
+# Debug mode to troubleshoot object structure
+python kibana_inventory.py --deployment prod --debug
 ```
 
 ### Legacy Usage (Direct URL/API Key)
@@ -111,6 +116,7 @@ python kibana_inventory.py --kibana_url https://your-kibana-url --api_key your_a
 | `--output_format` | Output format: json, csv, table, all | table |
 | `--detailed` | Show detailed inventory with all object information | False |
 | `--output_file` | Base filename for output files (without extension) | Auto-generated |
+| `--debug` | Enable debug mode to show object structure details | False |
 
 ## Output Files
 
@@ -182,6 +188,15 @@ python kibana_inventory.py --deployment qa --output_format json --output_file we
 python kibana_inventory.py --deployment dev --detailed --output_format csv
 ```
 
+#### 4. Debug Object Structure Issues
+```bash
+# Enable debug mode to see object structure and field extraction
+python kibana_inventory.py --deployment prod --object_id your_object_id --debug
+
+# Debug mode for inventory generation (shows first few objects)
+python kibana_inventory.py --deployment qa --debug
+```
+
 ## Error Handling
 
 The script includes comprehensive error handling for:
@@ -242,13 +257,51 @@ Failed to retrieve spaces. Error: Connection timeout
 - Verify the Kibana URL is accessible
 - Check for firewall or proxy issues
 
+#### 5. Missing Titles or Descriptions (Shows "N/A")
+```
+Object titles showing as "N/A" or "Dashboard-object-id"
+```
+**Solution**:
+- Use `--debug` flag to inspect object structure
+- Check the debug output for actual field locations
+- Verify objects have titles in Kibana UI
+
+### Debug Mode
+
+The script includes comprehensive debugging capabilities to help troubleshoot issues:
+
+#### Enable Debug Mode
+```bash
+# Debug specific object search
+python kibana_inventory.py --deployment prod --object_id your_object_id --debug
+
+# Debug inventory generation (shows first few objects from each type)
+python kibana_inventory.py --deployment qa --debug --output_format table
+```
+
+#### Debug Output Example
+```
+=== DEBUG: Object Structure for dashboard in space default ===
+Object ID: 8249c8c0-6070-11ec-8a8a-e5fb1e2cdc19
+Object Type: dashboard
+Top-level keys: ['attributes', 'coreMigrationVersion', 'id', 'managed', ...]
+Attributes keys: ['description', 'hits', 'kibanaSavedObjectMeta', 'title', ...]
+attributes.title: 'PR Dashboard' (FOUND)
+attributes.description: '' (EMPTY/NOT FOUND)
+✅ EXTRACTED TITLE: 'PR Dashboard'
+✅ EXTRACTED DESCRIPTION: ''
+=== END DEBUG ===
+```
+
 ### Debug Tips
 
-1. **Check logs** for detailed error information
-2. **Verify deployment configuration** matches your actual endpoints
-3. **Test connectivity** to Kibana URL manually
-4. **Validate API key permissions** in Kibana UI
-5. **Run with minimal arguments** first to test basic connectivity
+1. **Use debug mode first** when encountering issues with object titles or descriptions
+2. **Check logs** for detailed error information and object structure details
+3. **Verify deployment configuration** matches your actual endpoints
+4. **Test connectivity** to Kibana URL manually
+5. **Validate API key permissions** in Kibana UI
+6. **Run with minimal arguments** first to test basic connectivity
+7. **Check object structure** if titles appear as "N/A" or fallback names
 
 ## Security Considerations
 
@@ -323,6 +376,7 @@ The following flowchart illustrates the script's execution flow:
                                        |     & Exit Script      |
                                        +------------------------+
 ```
+
 
 
 ## Support
