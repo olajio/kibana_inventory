@@ -1,0 +1,69 @@
+{
+  "id": "8249c8c0-6070-11ec-8a8a-e5fb1e2cdc19",
+  "type": "dashboard",
+  "namespaces": [
+    "default"
+  ],
+  "migrationVersion": {
+    "dashboard": "10.2.0"
+  },
+  "updated_at": "2022-03-25T04:49:22.909Z",
+  "version": "WzExOTg2NiwxOF0=",
+  "attributes": {
+    "title": "PR Dashboard",
+    "hits": 0,
+    "description": "",
+    "panelsJSON": """[{"version":"8.9.0","type":"visualization","gridData":{"x":0,"y":0,"w":23,"h":10,"i":"4b066879-eb23-46fb-b3e6-1bd59484d7fd"},"panelIndex":"4b066879-eb23-46fb-b3e6-1bd59484d7fd","embeddableConfig":{"savedVis":{"title":"Last Log Entry per Trace ID","description":"","type":"table","params":{"perPage":500,"showPartialRows":false,"showMetricsAtAllLevels":false,"showTotal":false,"showToolbar":false,"totalFunc":"sum","percentageCol":""},"uiState":{"vis":{"params":{"sort":{"columnIndex":null,"direction":null},"colWidth":[{"colIndex":2,"width":127.33333333333334},{"colIndex":1,"width":204.33333333333334},{"colIndex":0,"width":130.58333333333331},{"colIndex":3,"width":254.58333333333331},{"colIndex":4,"width":241.58333333333337}]}}},"data":{"aggs":[{"id":"4","enabled":true,"type":"min","params":{"field":"@timestamp","customLabel":"First DDS Call"},"schema":"metric"},{"id":"1","enabled":true,"type":"max","params":{"field":"@timestamp","customLabel":"Last DDS Call"},"schema":"metric"},{"id":"6","enabled":true,"type":"terms","params":{"field":"labels.client_code","orderBy":"1","order":"desc","size":1000,"otherBucket":false,"otherBucketLabel":"Other","missingBucket":false,"missingBucketLabel":"Missing"},"schema":"bucket"},{"id":"5","enabled":true,"type":"terms","params":{"field":"agent.hostname","orderBy":"1","order":"desc","size":1000,"otherBucket":false,"otherBucketLabel":"Other","missingBucket":false,"missingBucketLabel":"Missing"},"schema":"bucket"},{"id":"3","enabled":true,"type":"terms","params":{"field":"user.name","orderBy":"1","order":"desc","size":1000,"otherBucket":false,"otherBucketLabel":"Other","missingBucket":false,"missingBucketLabel":"Missing"},"schema":"bucket"},{"id":"2","enabled":true,"type":"terms","params":{"field":"trace.id","orderBy":"1","order":"desc","size":10000,"otherBucket":false,"otherBucketLabel":"Other","missingBucket":false,"missingBucketLabel":"Missing"},"schema":"bucket"}],"searchSource":{"query":{"query":"","language":"lucene"},"filter":[{"meta":{"index":"filebeat-*","type":"phrases","key":"agent.hostname","value":"CW01-11VALPRX04, CW01-11VALPRX05, CW01-11VALPRX06","params":["CW01-11VALPRX04","CW01-11VALPRX05","CW01-11VALPRX06"],"alias":null,"negate":false,"disabled":false},"query":{"bool":{"should":[{"match_phrase":{"agent.hostname":"CW01-11VALPRX04"}},{"match_phrase":{"agent.hostname":"CW01-11VALPRX05"}},{"match_phrase":{"agent.hostname":"CW01-11VALPRX06"}}],"minimum_should_match":1}},"$state":{"store":"appState"}},{"meta":{"index":"filebeat-*","alias":null,"negate":true,"disabled":false,"type":"phrase","key":"user.name","params":{"query":"caviar-reporting"}},"query":{"match_phrase":{"user.name":"caviar-reporting"}},"$state":{"store":"appState"}},{"meta":{"index":"filebeat-*","alias":null,"negate":false,"disabled":false,"type":"phrase","key":"log.logger","params":{"query":"DataLoadDDS"}},"query":{"match_phrase":{"log.logger":"DataLoadDDS"}},"$state":{"store":"appState"}},{"meta":{"index":"filebeat-*","alias":null,"negate":true,"disabled":false,"type":"phrase","key":"message","params":{"query":"*\"health_check\": \"True\"*"}},"query":{"match_phrase":{"message":"*\"health_check\": \"True\"*"}},"$state":{"store":"appState"}}]},"savedSearchId":"e49bd2b0-6a4f-11eb-819b-b55ac49091f9"}},"enhancements":{},"type":"visualization"}},{"version":"7.16.3","type":"visualization","gridData":{"x":23,"y":0,"w":23,"h":10,"i":"2f38d0a8-6bb4-4e3a-bad3-514be0b05e75"},"panelIndex":"2f38d0a8-6bb4-4e3a-bad3-514be0b05e75","embeddableConfig":{"enhancements":{}},"panelRefName":"panel_2f38d0a8-6bb4-4e3a-bad3-514be0b05e75"},{"version":"7.16.3","type":"visualization","gridData":{"x":0,"y":10,"w":23,"h":13,"i":"d5f28e47-8c9d-4cb9-92ae-572e75fc28d8"},"panelIndex":"d5f28e47-8c9d-4cb9-92ae-572e75fc28d8","embeddableConfig":{"enhancements":{}},"panelRefName":"panel_d5f28e47-8c9d-4cb9-92ae-572e75fc28d8"},{"version":"7.16.3","type":"visualization","gridData":{"x":23,"y":10,"w":23,"h":13,"i":"b8eb91e8-a1ee-4122-b833-4567c11e8331"},"panelIndex":"b8eb91e8-a1ee-4122-b833-4567c11e8331","embeddableConfig":{"enhancements":{}},"panelRefName":"panel_b8eb91e8-a1ee-4122-b833-4567c11e8331"}]""",
+    "optionsJSON": """{"hidePanelTitles":false,"useMargins":true}""",
+    "version": 1,
+    "timeRestore": false,
+    "kibanaSavedObjectMeta": {
+      "searchSourceJSON": """{"query":{"language":"kuery","query":""},"filter":[]}"""
+    }
+  },
+  "references": [
+    {
+      "name": "4b066879-eb23-46fb-b3e6-1bd59484d7fd:kibanaSavedObjectMeta.searchSourceJSON.filter[0].meta.index",
+      "type": "index-pattern",
+      "id": "filebeat-*"
+    },
+    {
+      "name": "4b066879-eb23-46fb-b3e6-1bd59484d7fd:kibanaSavedObjectMeta.searchSourceJSON.filter[1].meta.index",
+      "type": "index-pattern",
+      "id": "filebeat-*"
+    },
+    {
+      "name": "4b066879-eb23-46fb-b3e6-1bd59484d7fd:kibanaSavedObjectMeta.searchSourceJSON.filter[2].meta.index",
+      "type": "index-pattern",
+      "id": "filebeat-*"
+    },
+    {
+      "name": "4b066879-eb23-46fb-b3e6-1bd59484d7fd:kibanaSavedObjectMeta.searchSourceJSON.filter[3].meta.index",
+      "type": "index-pattern",
+      "id": "filebeat-*"
+    },
+    {
+      "name": "4b066879-eb23-46fb-b3e6-1bd59484d7fd:search_0",
+      "type": "search",
+      "id": "e49bd2b0-6a4f-11eb-819b-b55ac49091f9"
+    },
+    {
+      "name": "2f38d0a8-6bb4-4e3a-bad3-514be0b05e75:panel_2f38d0a8-6bb4-4e3a-bad3-514be0b05e75",
+      "type": "visualization",
+      "id": "cc16e6e0-61c4-11ec-9228-295b5e1d2df5"
+    },
+    {
+      "name": "d5f28e47-8c9d-4cb9-92ae-572e75fc28d8:panel_d5f28e47-8c9d-4cb9-92ae-572e75fc28d8",
+      "type": "visualization",
+      "id": "34f5d6b0-9115-11ec-a422-674e5b68bbfa"
+    },
+    {
+      "name": "b8eb91e8-a1ee-4122-b833-4567c11e8331:panel_b8eb91e8-a1ee-4122-b833-4567c11e8331",
+      "type": "visualization",
+      "id": "cec17b50-9115-11ec-a422-674e5b68bbfa"
+    }
+  ],
+  "managed": false,
+  "coreMigrationVersion": "8.8.0",
+  "typeMigrationVersion": "10.2.0"
+}
