@@ -324,24 +324,6 @@ The following flowchart illustrates the script's execution flow:
                                        +------------------------+
 ```
 
-## Contributing
-
-To contribute to this script:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test across different deployments
-5. Submit a pull request
-
-## License
-
-This script is provided as-is for internal use. Please ensure compliance with your organization's policies when using with production systems.
-
-## Version History
-
-- **v2.0**: Added multi-deployment support with configuration mapping
-- **v1.0**: Initial version with direct URL/API key support
 
 ## Support
 
